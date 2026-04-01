@@ -9,6 +9,9 @@ export default async function handler(req, res) {
   try {
     const body = req.body || {};
 
+    console.log("=== FULL FILLOUT BODY ===");
+    console.log(JSON.stringify(body, null, 2));
+
     const bitrixUrl = process.env.BITRIX_WEBHOOK_URL;
 
     if (!bitrixUrl) {
@@ -18,9 +21,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Здесь сопоставляются поля Fillout -> поля Bitrix24
-    // Слева: поле Bitrix24
-    // Справа: ключ, который приходит из Fillout
     const payload = {
       entityTypeId: 1046,
       fields: {
@@ -36,6 +36,9 @@ export default async function handler(req, res) {
       }
     };
 
+    console.log("=== SENT TO BITRIX ===");
+    console.log(JSON.stringify(payload, null, 2));
+
     const bitrixResponse = await fetch(bitrixUrl, {
       method: "POST",
       headers: {
@@ -46,17 +49,9 @@ export default async function handler(req, res) {
 
     const resultText = await bitrixResponse.text();
 
-    if (!bitrixResponse.ok) {
-      return res.status(bitrixResponse.status).json({
-        success: false,
-        error: "Bitrix request failed",
-        bitrix_status: bitrixResponse.status,
-        bitrix_response: resultText
-      });
-    }
-
     return res.status(200).json({
       success: true,
+      fillout_body: body,
       sent_to_bitrix: payload,
       bitrix_response: resultText
     });
