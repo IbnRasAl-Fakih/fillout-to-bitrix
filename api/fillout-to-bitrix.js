@@ -13,6 +13,25 @@ function formatAlmatyDate(value) {
     return value;
   }
 
+  const dottedAmPmMatch = value.match(
+    /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i
+  );
+
+  if (dottedAmPmMatch) {
+    const [, day, month, year, rawHours, minutes, meridiem] = dottedAmPmMatch;
+    let hours = Number(rawHours);
+
+    if (meridiem.toUpperCase() === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    if (meridiem.toUpperCase() === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    return `${padDatePart(day)}.${padDatePart(month)}.${year} ${padDatePart(hours)}:${minutes}`;
+  }
+
   const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
@@ -42,6 +61,14 @@ function firstValue(value) {
   }
 
   return value || "";
+}
+
+function listValues(value) {
+  if (Array.isArray(value)) {
+    return value.map(firstValue).filter(Boolean).join(", ");
+  }
+
+  return firstValue(value);
 }
 
 export default async function handler(req, res) {
@@ -83,9 +110,7 @@ export default async function handler(req, res) {
 
         ufCrm12SourceOfDanger: firstValue(body["fields.ufCrm12SourceOfDanger"]),
 
-        ufCrm12PpeCategories: Array.isArray(body["fields.ufCrm12PpeCategories"])
-          ? body["fields.ufCrm12PpeCategories"]
-          : [],
+        ufCrm12PpeCategories: listValues(body["fields.ufCrm12PpeCategories"]),
 
         ufCrm12UnsafeDetails: body["fields.ufCrm12UnsafeDetails"] || "",
         ufCrm12SafetyReinforcement: body["fields.ufCrm12SafetyReinforcement"] || "",
