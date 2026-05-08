@@ -1,3 +1,49 @@
+const ALMATY_UTC_OFFSET_MINUTES = 5 * 60;
+
+function padDatePart(value) {
+  return String(value).padStart(2, "0");
+}
+
+function formatAlmatyDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const almatyDate = new Date(
+    parsed.getTime() + ALMATY_UTC_OFFSET_MINUTES * 60 * 1000
+  );
+
+  const day = padDatePart(almatyDate.getUTCDate());
+  const month = padDatePart(almatyDate.getUTCMonth() + 1);
+  const year = almatyDate.getUTCFullYear();
+  const hours = padDatePart(almatyDate.getUTCHours());
+  const minutes = padDatePart(almatyDate.getUTCMinutes());
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+}
+
+function firstValue(value) {
+  if (Array.isArray(value)) {
+    return firstValue(value[0]);
+  }
+
+  if (value && typeof value === "object") {
+    return value.value || value.label || value.name || "";
+  }
+
+  return value || "";
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -23,7 +69,7 @@ export default async function handler(req, res) {
         ufCrm12FullName: body["fields.ufCrm12FullName"] || "",
         ufCrm12JobTitle: body["fields.ufCrm12JobTitle"] || "",
         ufCrm12Company: body["fields.ufCrm12Company"] || "",
-        ufCrm12Date: body["fields.ufCrm12Date"] || "",
+        ufCrm12Date: formatAlmatyDate(body["fields.ufCrm12Date"]),
         ufCrm12ActivityObserved: body["fields.ufCrm12ActivityObserved"] || "",
         ufCrm12WorkArea: body["fields.ufCrm12WorkArea"] || "",
 
@@ -35,10 +81,7 @@ export default async function handler(req, res) {
             ? body["fields.ufCrm12DiscrepancyPhoto"][0].url
             : "",
 
-        // Для множественных списков лучше оставить массив
-        ufCrm12SourceOfDanger: Array.isArray(body["fields.ufCrm12SourceOfDanger"])
-          ? body["fields.ufCrm12SourceOfDanger"]
-          : [],
+        ufCrm12SourceOfDanger: firstValue(body["fields.ufCrm12SourceOfDanger"]),
 
         ufCrm12PpeCategories: Array.isArray(body["fields.ufCrm12PpeCategories"])
           ? body["fields.ufCrm12PpeCategories"]
