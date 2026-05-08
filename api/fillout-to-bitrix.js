@@ -51,24 +51,34 @@ function formatAlmatyDate(value) {
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
-function firstValue(value) {
+function extractValues(value) {
+  if (!value) {
+    return [];
+  }
+
   if (Array.isArray(value)) {
-    return firstValue(value[0]);
+    return value.flatMap(extractValues);
   }
 
-  if (value && typeof value === "object") {
-    return value.value || value.label || value.name || "";
+  if (typeof value === "object") {
+    const directValue = value.value || value.label || value.name;
+
+    if (directValue) {
+      return extractValues(directValue);
+    }
+
+    return [];
   }
 
-  return value || "";
+  return [String(value)];
+}
+
+function firstValue(value) {
+  return extractValues(value)[0] || "";
 }
 
 function listValues(value) {
-  if (Array.isArray(value)) {
-    return value.map(firstValue).filter(Boolean).join(", ");
-  }
-
-  return firstValue(value);
+  return [...new Set(extractValues(value))].join(", ");
 }
 
 export default async function handler(req, res) {
@@ -108,7 +118,7 @@ export default async function handler(req, res) {
             ? body["fields.ufCrm12DiscrepancyPhoto"][0].url
             : "",
 
-        ufCrm12SourceOfDanger: firstValue(body["fields.ufCrm12SourceOfDanger"]),
+        ufCrm12SourceOfDanger: listValues(body["fields.ufCrm12SourceOfDanger"]),
 
         ufCrm12PpeCategories: listValues(body["fields.ufCrm12PpeCategories"]),
 
